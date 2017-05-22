@@ -11,28 +11,32 @@ const EMOJIS = {
   "😐": 0,    "😕": -0.3, "😯": 0,    "😶": 0,    "😇": 0.7,  "😏": 0.3,  "😑": 0,
   "😘": 1,    "😂": 1
 };
+const EMOJI_LIST= (()=>{
+  let allEmojis = [];
+  for (let each in EMOJIS) allEmojis.push(each);
+  return allEmojis;
+})();
 
 
-// let Twitter = require('node-tweet-stream'), 
-//   t = new Twitter({
-//     consumer_key: process.env.CONSUMER_KEY,
-//     consumer_secret: process.env.CONSUMER_SECRET,
-//     token: process.env.ACCESS_TOKEN,
-//     token_secret: process.env.ACCESS_TOKEN_SECRET
-//   })
-// t.language('en');
-// t.track('a');
-// t.on('error', err => console.log('Oh no'));
+let Twitter = require('node-tweet-stream'), 
+  t = new Twitter({
+    consumer_key: process.env.CONSUMER_KEY,
+    consumer_secret: process.env.CONSUMER_SECRET,
+    token: process.env.ACCESS_TOKEN,
+    token_secret: process.env.ACCESS_TOKEN_SECRET
+  })
+t.language('en');
+t.track('a');
+t.on('error', err => console.log('Oh no'));
 
-// t.on('tweet', tweet => {
-//   let hasEmoji = emojiRegex().test(tweet.text);
-//   // console.log('hasEmoji ------------', hasEmoji);
-//   if (hasEmoji) console.log(tweet.text);
-// })
-
-let txt = `Take some time and watch ancient African history. 👊🏿🌍🍿 https://t.co/aa574iTrCC`
-let tweetEmojis = txt.match(emojiRegex());
-console.log(tweetEmojis.length);
-
-
-// console.log(emojiRegex().test(`tweet received RT @_atypicalsgirls: A Man Gets Killed By A Hitman In Front Of His Wife And What Happens Next Is Brutal''`));
+t.on('tweet', tweet => {
+  let hasEmoji = emojiRegex().test(tweet.text);
+  if (!hasEmoji) return;
+  let tweetEmojis = tweet.text.match(emojiRegex());
+  tweetEmojis.forEach((char, idx) => {
+    if (EMOJI_LIST.indexOf(char) !== -1) {
+      console.log(char, EMOJIS[char]);
+    }
+  }) 
+  
+})
