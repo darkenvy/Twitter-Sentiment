@@ -11,6 +11,7 @@
   "dependencies": {
     "dotenv": "^4.0.0",
     "emoji-regex": "^6.4.2",
+    "nedb": "^1.8.0",
     "node-tweet-stream": "^2.0.1"
   }
 }
