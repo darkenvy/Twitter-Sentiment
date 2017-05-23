@@ -25,10 +25,25 @@ const EMOJIS = { // sentment, strength (0=normal str. 1=strong)
   "😢": [1   , 0.5], "😓": [-0.2, 0.4], "😩": [-0.4, 0.8], "😤": [-0.8, 1  ],
   "😵": [-0.2, 0.6], "😲": [-0.2, 0.6], "😮": [0   , 1  ], "😬": [0   , 0  ],
   "😑": [0   , 0  ], "😘": [1   , 0.8], "😂": [1   , 1  ], "😉": [0.5  , 0 ], 
-  "😍": [1   , 0  ], "😛": [0.8  ,0  ], "😳": [-0.8, 0  ], "😣": [1    , 0 ], 
+  "😍": [1   , 0  ], "😛": [0.8  , 0 ], "😳": [-0.8, 0  ], "😣": [1    , 0 ], 
   "😢": [1   , 0  ], "😓": [-0.2 , 0 ], "😩": [-0.4, 0  ], "😤": [-0.8 , 0 ], 
   "😖": [-0.8, 0  ], "😵": [-0.2 , 0 ], "😲": [-0.2, 0  ], "😮": [0    , 0 ], 
-  "😬": [0   , 0  ], "😏": [0.3  , 0 ], "😑": [0   , 0  ]
+  "😬": [0   , 0  ], "😏": [0.3  , 0 ], "😑": [0   , 0  ], "🎂": [0.7, 0   ], 
+  "🎊": [0.7, 0   ], "💘": [0.9, 0   ], "🍰": [0.7, 0   ]
+  // "🍇": [0.1, 0   ], "🍈": [0.1, 0   ], "🍉": [0.1, 0   ], "🍊": [0.1, 0   ], 
+  // "🍋": [0.1, 0   ], "🔥": [0.8, 0.8 ], "🍻": [0.3, 0.1 ], "💡": [0.8, 0.1 ], 
+  // "🍌": [0.1, 0   ], "🍍": [0.1, 0   ], "🍎": [0.1, 0   ], "🍏": [0.1, 0   ], 
+  // "🍐": [0.1, 0   ], "🍑": [0.1, 0   ], "🍒": [0.1, 0   ], "🍓": [0.1, 0   ], 
+  // "🍅": [0.1, 0   ], "🍆": [0.6, 0.3 ], "🌽": [0.1, 0.2 ], "🍄": [0.6, 0.2 ], 
+  // "🌰": [0.1, 0   ], "🍞": [0.1, 0   ], "🍖": [0.2, 0.2 ], "🍗": [0.2, 0.2 ], 
+  // "🍔": [0.2, 0.4 ], "🍟": [0.1, 0.4 ], "🍕": [0.2, 0.4 ], "🍳": [0.1, 0   ], 
+  // "🍲": [0.1, 0   ], "🍱": [0.1, 0   ], "🍘": [0.1, 0.1 ], "🍙": [0.1, 0   ], 
+  // "🍚": [0.1, 0   ], "🍛": [0.1, 0   ], "🍜": [0.1, 0   ], "🍝": [0.1, 0   ], 
+  // "🍠": [0.1, 0   ], "🍢": [0.1, 0   ], "🍣": [0.1, 0   ], "🍤": [0.2, 0.1 ], 
+  // "🍥": [0.1, 0   ], "🍡": [0.2, 0   ], "🍦": [0.2, 0   ], "🍧": [0.2, 0   ], 
+  // "🍨": [0.2, 0   ], "🍩": [0.2, 0.1 ], "🍪": [0.2, 0.1 ], "🎂": [0.7, 0   ], 
+  // "🍶": [0.3, 0.1 ], "🍷": [0.3, 0.1 ], "🍸": [0.3, 0.1 ], "🍺": [0.3, 0.1 ], 
+  // "🍹": [0.3, 0.1 ]
 };
 const EMOJI_LIST= (()=>{
   let allEmojis = [];
@@ -36,17 +51,31 @@ const EMOJI_LIST= (()=>{
   return allEmojis;
 })();
 
+// analytics vars
+let tweetCount = 0;
+let wordCount = 0;
+let newWordCount = 0;
+
+// ------ Main ------
 console.log('Loading & Cleaning Database');
 db.loadDatabase( ()=>{
+  db.persistence.setAutocompactionInterval(120*1000);
+  setInterval(()=>{
+    console.log(tweetCount*6 + 't/min', wordCount*6 + 'w/min', newWordCount*6 + 'new/min');
+    tweetCount=0;
+    wordCount=0;
+    newWordCount=0;
+  }, 10*1000);
   t.language('en');
   t.track('a');
   t.on('error', err => console.log('Oh no'));
   t.on('tweet', tweet => {
+    tweetCount++;
     let hasEmoji = emojiRegex().test(tweet.text);
     if (!hasEmoji) return;
     let tweetWords     = tweet.text
-                          .replace(/(?:(?:https?:\/\/.+?\s)|(?:https?:\/\/.+$)|(?:@.+?\s)|(?:@.+$)|(?:RT)|(?:#\w+))/g, '')
-                          .match(/(\w+)/g),
+                         .replace(/(?:(?:https?:\/\/.+?\s)|(?:https?:\/\/.+$)|(?:@.+?\s)|(?:@.+$)|(?:RT)|(?:#\w+))/g, '')
+                         .match(/(\w+)/g),
         tweetEmojis    = tweet.text.match(emojiRegex()),
         emojisUsed     = [];
 
@@ -67,12 +96,14 @@ db.loadDatabase( ()=>{
 
 
 function commitToDB() {
+  // console.log('---- Committing to DB ----');
   let cache = addToDB;
   addToDB   = {};
-  for (let word in cache) find(word, cache[word]); // jshint ignore:line
+  for (let word in cache) find(word.toLowerCase(), cache[word]); // jshint ignore:line
 }
 
 function find(word, sentiments) {
+  wordCount++;
   db.findOne({word: word}, (err, doc) => {
     if (!doc) create(word, sentiments);
     else      update(doc,  sentiments);
@@ -85,19 +116,16 @@ function create(word, sentiments) {
   doc.pos   = sentiments[0];
   doc.neg   = sentiments[1];
   doc.count = 1;
+  newWordCount++;
   // doc.sentiments = sentiments;
-  db.insert(doc, (err, saved) => {
-    if (err) console.log('error', err);
-    console.log('created ', saved);
-  });
+  db.insert(doc, (err, saved) => {if (err) console.log('error', err)});
 }
 
 function update(doc, sentiments) {
-  // doc.total = doc.total + sentiments || sentiments;
   doc.pos = doc.pos + sentiments[0];
   doc.neg = doc.neg + sentiments[1];
   doc.count = doc.count + 1 || 1;
-  db.update({_id: doc._id}, doc, err => {
-    console.log('------------ updated');
-  });
+  db.update({_id: doc._id}, doc, err => {if (err) console.log(err)});
 }
+
+// Set interval to clear out single occurances around the point that the process slows.
