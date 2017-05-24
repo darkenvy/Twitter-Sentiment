@@ -14,7 +14,7 @@ let t = new Twitter({
   token_secret: process.env.ACCESS_TOKEN_SECRET
 });
 
-const ALLOWED_POS = ["FW", "JJ", "JJR", "JJS", "NN", "NNP", "NNPS", "NNS", 
+const ALLOWED_POS = ["FW", "JJ", "JJR", "JJS", "NN", "NNS", 
   "RB", "RBR", "RBS", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ"];
 
 // const IGNORE_WORDS = ['http', 'https', ];
