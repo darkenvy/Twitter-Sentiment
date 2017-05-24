@@ -1,7 +1,10 @@
 require('dotenv').config();
 let Datastore = require('nedb');
 let emojiRegex = require('emoji-regex');
+let Lemmer = require('lemmer');
 let Twitter = require('node-tweet-stream');
+let pos = require('pos');
+let tagger = new pos.Tagger();
 let db = new Datastore({filename: __dirname + '/sentiments.db.json'});
 let addToDB = {};
 let t = new Twitter({
@@ -10,6 +13,10 @@ let t = new Twitter({
   token: process.env.ACCESS_TOKEN,
   token_secret: process.env.ACCESS_TOKEN_SECRET
 });
+
+const ALLOWED_POS = ["FW", "JJ", "JJR", "JJS", "NN", "NNP", "NNPS", "NNS", 
+  "RB", "RBR", "RBS", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ"];
+
 // const IGNORE_WORDS = ['http', 'https', ];
 const EMOJIS = { // sentment, strength (0=normal str. 1=strong)
   // note: get rid of strength. Unused
@@ -60,15 +67,17 @@ let newWordCount = 0;
 console.log('Loading & Cleaning Database');
 db.loadDatabase( ()=>{
   db.persistence.setAutocompactionInterval(120*1000);
+  t.language('en');
+  t.track('a');
+  t.on('error', err => console.log('Oh no'));
   setInterval(()=>{
     console.log(tweetCount*6 + 't/min', wordCount*6 + 'w/min', newWordCount*6 + 'new/min');
     tweetCount=0;
     wordCount=0;
     newWordCount=0;
   }, 10*1000);
-  t.language('en');
-  t.track('a');
-  t.on('error', err => console.log('Oh no'));
+
+  
   t.on('tweet', tweet => {
     tweetCount++;
     let hasEmoji = emojiRegex().test(tweet.text);
@@ -83,7 +92,13 @@ db.loadDatabase( ()=>{
       if (EMOJI_LIST.indexOf(char) !== -1 && emojisUsed.indexOf(char) === -1) {
         emojisUsed.push(char);
         tweetWords.forEach((word, idx) => { // Apply sentiment values to each word in tweet.
-          if (word.length >= 5) addToDB[word] = [ EMOJIS[char][0], EMOJIS[char][1] ];
+          // regex checks to ensure the word doesn't have 3+ consecutive letters. eg: heeey
+          if (word.length >= 5
+          && word.length <= 20
+          && !(/(.)\1{2}/gi.test(word)) // jshint ignore:line
+          && allowedPOS(word)) { 
+            addToDB[word] = [ EMOJIS[char][0], EMOJIS[char][1] ];
+          }
         });
       }
     });
@@ -92,15 +107,47 @@ db.loadDatabase( ()=>{
     if (Object.keys(addToDB).length >= 100) commitToDB();
   });
 
+
+
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ---- Functions ---- //
+
+function allowedPOS(word) {
+  let words = new pos.Lexer().lex(word);
+  let taggedWords = tagger.tag(words);
+
+  let taggedWord = taggedWords[0];
+  let pTag = taggedWord[1];
+  console.log(ALLOWED_POS.indexOf(pTag) !== -1 ? word: '----- ' + word);
+  return ALLOWED_POS.indexOf(pTag) !== -1 ? true : false;
+}
 
 function commitToDB() {
   // console.log('---- Committing to DB ----');
   let cache = addToDB;
   addToDB   = {};
-  for (let word in cache) find(word.toLowerCase(), cache[word]); // jshint ignore:line
+  for (let word in cache) { // jshint ignore:line
+    Lemmer.lemmatize(word.toLowerCase(), (err, lemmed) => {
+      if (err) console.log('lemmer error: ', err);
+      find(lemmed[0].toLowerCase(), cache[word])
+    })
+  }
 }
 
 function find(word, sentiments) {

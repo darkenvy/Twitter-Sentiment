@@ -2,10 +2,26 @@ let Datastore = require('nedb');
 let bodyParser = require('body-parser');
 let async = require('async');
 let express = require('express');
+let pos = require('pos');
+let tagger = new pos.Tagger();
 let app = express();
 
+let amplifiers = ['RB', 'RBR', 'RBS', 'JJ', 'JJR', 'JJS'];
 
 app.use(bodyParser.urlencoded({ extended: false }));
+
+app.post('/test', (req, res) => {
+  let words = new pos.Lexer().lex(req.body.text);
+  let taggedWords = tagger.tag(words);
+  for (i in taggedWords) {
+    let taggedWord = taggedWords[i];
+    let word = taggedWord[0];
+    let tag = taggedWord[1];
+    
+  }
+  res.send('done')
+});
+
 app.post('/', (req, res) => {
   // req.body.payload
   let db = new Datastore({filename: __dirname + '/sentiments.db.json'});
@@ -34,12 +50,8 @@ app.post('/', (req, res) => {
       console.log('hit complete');
       console.log('SENTIMENT: ', sentiment)
       let rSentiment = sentiment / total || 0;
-      let rStrength = strength   / total || 0;
-      let rWeightedSentiment = (rStrength*2) * rSentiment;
       res.send({
-        sentiment: rSentiment,
-        strength:  rStrength,
-        weightedSentiment: rWeightedSentiment < 1 ? rWeightedSentiment : 1
+        sentiment: rSentiment
       });
     })
 
