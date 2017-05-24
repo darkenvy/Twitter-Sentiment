@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "async": "^2.4.1",
+    "body-parser": "^1.17.2",
     "dotenv": "^4.0.0",
     "emoji-regex": "^6.4.2",
     "nedb": "^1.8.0",
