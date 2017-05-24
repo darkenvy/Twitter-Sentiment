@@ -86,23 +86,50 @@ function getPOS(word) {
 }
 
 function advCalculateSentiment(wordList) {
-  console.log(wordList);
-  let finalSentiment = 0.0;
-  let finalTotal = 0;
-  for (let i=0; i<wordList.length-1; i++) {
-    if (descriptionWords.indexOf(wordList[i].pos) !== -1
-    && conceptualWords.indexOf(wordList[i+1].pos) !== -1) {
-      // change to amplify the following word
-      finalSentiment += wordList[i].sentiment
-      finalTotal++;
-      i++; // skip next word if the current word is describing the next
-    } else {
-      finalSentiment += wordList[i].sentiment
-      finalTotal++;
+  let multiplierTotal = 0;
+  let multiplierCount = 0;
+  let baseTotal = 0;
+  let baseCount = 0;
+  wordList.forEach(word => {
+    if (descriptionWords.indexOf(word.pos) !== -1) {
+      multiplierTotal += word.sentiment;
+      multiplierCount++;
+    } else if (conceptualWords.indexOf(word.pos) !== -1) {
+      baseTotal += word.sentiment;
+      baseCount++;
     }
+  });
+
+  var calcSent = function() {
+    let multiplier = (multiplierTotal / multiplierCount) || 0;
+    let base = baseTotal / baseCount;
+    let inverseBase = base >= 0 ? 1-base : -1-base
+    // return [multiplier, base, inverseBase, multiplierTotal, multiplierCount]
+    return multiplier * inverseBase + base;
   }
+
   return {
-    total_sentiment: finalSentiment / finalTotal,
+    total_sentiment: calcSent(),
     words: wordList
   }
+
+  // console.log(wordList);
+  // let finalSentiment = 0.0;
+  // let finalTotal = 0;
+  // for (let i=0; i<wordList.length-1; i++) {
+  //   if (descriptionWords.indexOf(wordList[i].pos) !== -1
+  //   && conceptualWords.indexOf(wordList[i+1].pos) !== -1) {
+  //     // change to amplify the following word
+  //     finalSentiment += wordList[i].sentiment
+  //     finalTotal++;
+  //     i++; // skip next word if the current word is describing the next
+  //   } else {
+  //     finalSentiment += wordList[i].sentiment
+  //     finalTotal++;
+  //   }
+  // }
+  // return {
+  //   total_sentiment: finalSentiment / finalTotal,
+  //   words: wordList
+  // }
 }
