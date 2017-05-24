@@ -64,6 +64,9 @@ let wordCount = 0;
 let newWordCount = 0;
 
 // ------ Main ------ //
+
+// modify to allow captialized accronyms
+
 console.log('Loading & Cleaning Database');
 db.loadDatabase( ()=>{
   db.persistence.setAutocompactionInterval(120*1000);
@@ -131,10 +134,9 @@ db.loadDatabase( ()=>{
 function allowedPOS(word) {
   let words = new pos.Lexer().lex(word);
   let taggedWords = tagger.tag(words);
-
   let taggedWord = taggedWords[0];
   let pTag = taggedWord[1];
-  console.log(ALLOWED_POS.indexOf(pTag) !== -1 ? word: '----- ' + word);
+  // console.log(ALLOWED_POS.indexOf(pTag) !== -1 ? word: '----- ' + word);
   return ALLOWED_POS.indexOf(pTag) !== -1 ? true : false;
 }
 

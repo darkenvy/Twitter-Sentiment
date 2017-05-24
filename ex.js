@@ -1,6 +1,7 @@
 let Datastore = require('nedb');
 let bodyParser = require('body-parser');
 let async = require('async');
+let Lemmer = require('lemmer');
 let express = require('express');
 let pos = require('pos');
 let tagger = new pos.Tagger();
@@ -28,30 +29,34 @@ app.post('/', (req, res) => {
   db.loadDatabase( ()=>{
     let words = req.body.payload.replace(/[^a-z0-9\s]/gi, '').split(' ');
     let sentiment = 0.0;
-    let strength = 0.0;
     let total = 0;
+    let outputList = [];
     console.log('WORD LIST', words);
     async.concat(words, function(word, cb) {
       if (word.length <= 1) {cb(); return}
-      db.findOne({word: word.toLowerCase()}, (err, result) => {
-        if (!result) {cb(); return}
-        console.log('Tried to find ', word);
-        let pos = result.pos;
-        let neg = 0-result.neg;
-        let calculated = (pos + neg) / result.count;
-        let strCalculated = findHighest(pos, neg) / result.count;
-        sentiment += calculated;
-        strength += strCalculated;
-        // console.log('strength: ', strength, findHighest, findHighest/result.count);
-        total++;
-        cb();
+      Lemmer.lemmatize(word.toLowerCase(), (err, lemmed) => {
+        db.findOne({word: lemmed[0].toLowerCase()}, (err, result) => {
+          if (!result) {cb(); return}
+          console.log('Tried to find ', word);
+          let pos = result.pos;
+          let neg = 0-result.neg;
+          let calculated = (pos + neg) / result.count;
+          sentiment += calculated;
+          total++;
+          outputList.push({
+            word: lemmed[0],
+            sentiment: calculated
+          });
+          cb();
+        });
       });
     }, complete => {
       console.log('hit complete');
       console.log('SENTIMENT: ', sentiment)
       let rSentiment = sentiment / total || 0;
       res.send({
-        sentiment: rSentiment
+        total_sentiment: rSentiment,
+        word_list: outputList
       });
     })
 
