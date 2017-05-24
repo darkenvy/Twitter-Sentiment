@@ -36,7 +36,7 @@ const EMOJIS = { // sentment, strength (0=normal str. 1=strong)
   "😢": [0   , 1  ], "😓": [0   , 0.3], "😩": [0  , 0.6], "😤": [0   , 1  ], 
   "😖": [0   , 1  ], "😵": [0   , 0.1], "😲": [0  , 0.4], "😮": [0   , 0  ], 
   "😬": [0   , 0  ], "😏": [0.3 , 0  ], "😑": [0  , 0.1], "🎂": [0.8 , 0  ], 
-  "🎊": [0.9 , 0  ], "💘": [0.9 , 0  ], "🍰": [0.7, 0   ]
+  "🎊": [0.9 , 0  ], "💘": [0.9 , 0  ], "🍰": [0.7, 0  ]
   // "🍇": [0.1, 0   ], "🍈": [0.1, 0   ], "🍉": [0.1, 0   ], "🍊": [0.1, 0   ], 
   // "🍋": [0.1, 0   ], "🔥": [0.8, 0.8 ], "🍻": [0.3, 0.1 ], "💡": [0.8, 0.1 ], 
   // "🍌": [0.1, 0   ], "🍍": [0.1, 0   ], "🍎": [0.1, 0   ], "🍏": [0.1, 0   ], 
@@ -96,7 +96,7 @@ db.loadDatabase( ()=>{
         emojisUsed.push(char);
         tweetWords.forEach((word, idx) => { // Apply sentiment values to each word in tweet.
           // regex checks to ensure the word doesn't have 3+ consecutive letters. eg: heeey
-          if (word.length >= 5
+          if ((word.length >= 5 || /[A-Z]{3,4}/.test(word)) // is an accronym
           && word.length <= 20
           && !(/(.)\1{2}/gi.test(word)) // jshint ignore:line
           && allowedPOS(word)) { 

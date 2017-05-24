@@ -7,21 +7,22 @@ let pos = require('pos');
 let tagger = new pos.Tagger();
 let app = express();
 
-let amplifiers = ['RB', 'RBR', 'RBS', 'JJ', 'JJR', 'JJS'];
+// let amplifiers = ['RB', 'RBR', 'RBS', 'JJ', 'JJR', 'JJS'];
+let descriptionWords = ['JJ', 'JJR', 'JJS', 'RB', 'RBR', 'RBS', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ'];
+let conceptualWords = ['NN', 'NNP', 'NNPS', 'NNS', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ'];
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.post('/test', (req, res) => {
-  let words = new pos.Lexer().lex(req.body.text);
-  let taggedWords = tagger.tag(words);
-  for (i in taggedWords) {
-    let taggedWord = taggedWords[i];
-    let word = taggedWord[0];
-    let tag = taggedWord[1];
-    
-  }
-  res.send('done')
-});
+// app.post('/test', (req, res) => {
+//   let words = new pos.Lexer().lex(req.body.text);
+//   let taggedWords = tagger.tag(words);
+//   for (i in taggedWords) {
+//     let taggedWord = taggedWords[i];
+//     let word = taggedWord[0];
+//     let tag = taggedWord[1];
+//   }
+//   res.send('done')
+// });
 
 app.post('/', (req, res) => {
   // req.body.payload
@@ -31,7 +32,7 @@ app.post('/', (req, res) => {
     let sentiment = 0.0;
     let total = 0;
     let outputList = [];
-    console.log('WORD LIST', words);
+
     async.concat(words, function(word, cb) {
       if (word.length <= 1) {cb(); return}
       Lemmer.lemmatize(word.toLowerCase(), (err, lemmed) => {
@@ -44,20 +45,18 @@ app.post('/', (req, res) => {
           sentiment += calculated;
           total++;
           outputList.push({
-            word: lemmed[0],
-            sentiment: calculated
+            word: word,
+            lemmed: lemmed[0],
+            sentiment: calculated,
+            pos: getPOS(word)
           });
           cb();
         });
       });
     }, complete => {
-      console.log('hit complete');
       console.log('SENTIMENT: ', sentiment)
-      let rSentiment = sentiment / total || 0;
-      res.send({
-        total_sentiment: rSentiment,
-        word_list: outputList
-      });
+      // let rSentiment = sentiment / total || 0;
+      res.send(advCalculateSentiment(outputList));
     })
 
 
@@ -76,4 +75,34 @@ app.listen(3000);
 
 function findHighest(one, two) {
   return Math.abs(one) >= Math.abs(two) ? one :  two;
+}
+
+function getPOS(word) {
+  let words = new pos.Lexer().lex(word);
+  let taggedWords = tagger.tag(words);
+  let taggedWord = taggedWords[0];
+  let tag = taggedWord[1];
+  return tag;
+}
+
+function advCalculateSentiment(wordList) {
+  console.log(wordList);
+  let finalSentiment = 0.0;
+  let finalTotal = 0;
+  for (let i=0; i<wordList.length-1; i++) {
+    if (descriptionWords.indexOf(wordList[i].pos) !== -1
+    && conceptualWords.indexOf(wordList[i+1].pos) !== -1) {
+      // change to amplify the following word
+      finalSentiment += wordList[i].sentiment
+      finalTotal++;
+      i++; // skip next word if the current word is describing the next
+    } else {
+      finalSentiment += wordList[i].sentiment
+      finalTotal++;
+    }
+  }
+  return {
+    total_sentiment: finalSentiment / finalTotal,
+    words: wordList
+  }
 }
