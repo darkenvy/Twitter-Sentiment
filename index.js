@@ -62,6 +62,7 @@ const EMOJI_LIST= (()=>{
 let tweetCount = 0;
 let wordCount = 0;
 let newWordCount = 0;
+let startTime = Date.now();
 
 // ------ Main ------ //
 
@@ -73,12 +74,21 @@ db.loadDatabase( ()=>{
   t.language('en');
   t.track('a');
   t.on('error', err => console.log('Oh no'));
-  setInterval(()=>{
-    console.log(tweetCount*6 + 't/min', wordCount*6 + 'w/min', newWordCount*6 + 'new/min');
-    tweetCount=0;
-    wordCount=0;
-    newWordCount=0;
-  }, 10*1000);
+  setInterval( () => {
+    console.log( 
+      (tweetCount   / ((Date.now() - startTime)/1000)).toFixed(1) + 't/s', ' | ',
+      (wordCount    / ((Date.now() - startTime)/1000)).toFixed(2) + 'w/s',
+      (wordCount    / (((Date.now() - startTime)/1000))*60).toFixed(2) + 'w/m', ' | ',
+      (newWordCount / ((Date.now() - startTime)/1000)).toFixed(4) + 'nw/s',
+      ((newWordCount / ((Date.now() - startTime)/1000))*60).toFixed(2) + 'nw/m'
+     );
+  }, 5 * 1000);
+  // setInterval(()=>{
+  //   console.log(tweetCount*6 + 't/min', wordCount*6 + 'w/min', newWordCount*6 + 'new/min');
+  //   tweetCount=0;
+  //   wordCount=0;
+  //   newWordCount=0;
+  // }, 10*1000);
 
   
   t.on('tweet', tweet => {
